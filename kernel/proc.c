@@ -146,6 +146,8 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // >>> 6.1 trace: tiến trình mới mặc định không trace
+  p->tracemask = 0;
   return p;
 }
 
@@ -302,6 +304,9 @@ fork(void)
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
+  // >>> 6.1 trace: con kế thừa chế độ trace của cha (giữ np->lock khi gán)
+  np->tracemask = p->tracemask;
+
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
     if(p->ofile[i])
@@ -321,6 +326,8 @@ fork(void)
   acquire(&np->lock);
   np->state = RUNNABLE;
   release(&np->lock);
+
+ 
 
   return pid;
 }
