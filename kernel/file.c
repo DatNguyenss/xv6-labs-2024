@@ -179,4 +179,20 @@ filewrite(struct file *f, uint64 addr, int n)
 
   return ret;
 }
+//Collect NOpenfiles for sysinfo
+uint64
+kcollectnopenfiles(void)
+{
+  struct file *f;
+  uint64 count = 0;
 
+  acquire(&ftable.lock);
+  for(int i=0; i<NFILE; i++){
+    f=&ftable.file[i];
+    if(f->ref > 0){
+      count++;
+    }
+  }
+  release(&ftable.lock);
+  return count;
+}
