@@ -273,6 +273,45 @@ uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
   return newsz;
 }
 
+// Helper function to recursively print page table entries
+static void
+vmprint_helper(pagetable_t pagetable, int level)
+{
+  // there are 2^9 = 512 PTEs in a page table.
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    if(pte & PTE_V){
+      // Print indentation based on level
+      // Level 2: ".."
+      // Level 1: ".. .."
+      // Level 0: ".. .. .."
+      for(int j = 2; j > level; j--){
+        printf(".. ");
+      }
+      printf("..");
+      
+      uint64 pa = PTE2PA(pte);
+      printf("%d: pte %p pa %p\n", i, (void *)pte, (void *)pa);
+      
+      // If this is a non-leaf PTE (points to another page table)
+      if((pte & (PTE_R|PTE_W|PTE_X)) == 0){
+        // Recursively print the lower-level page table
+        pagetable_t child = (pagetable_t)pa;
+        vmprint_helper(child, level - 1);
+      }
+      // If this is a leaf PTE, we just print it (already done above)
+    }
+  }
+}
+
+// Print a page table in the format specified by the lab
+void
+vmprint(pagetable_t pagetable)
+{
+  printf("page table %p\n", pagetable);
+  vmprint_helper(pagetable, 2);
+}
+
 // Recursively free page-table pages.
 // All leaf mappings must already have been removed.
 void
